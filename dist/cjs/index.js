@@ -81,42 +81,21 @@ async function $2bdd3d1603727488$export$2e2bcd8739ae039(tarfile) {
     const input = new Blob([
         tarfile
     ]);
-    const blocks = $2bdd3d1603727488$var$getBlocks(input);
-    let files = [];
+    const noOfBlocks = input.size / 512;
+    const files = [];
     {
-        let mode = "header";
-        let file;
-        let fileBlocks = [];
-        let fileBlocksCount = 0;
-        let fileIdx = 0;
-        for (const block of blocks){
-            if (mode === "file") {
-                if (fileIdx < fileBlocksCount) {
-                    fileBlocks.push(block);
-                    fileIdx++;
-                } else {
-                    file.contents = new Blob(fileBlocks).slice(0, file.size);
-                    files.push(Object.freeze(file));
-                    if (await $2bdd3d1603727488$var$isEmptyBlock(block)) break;
-                    mode = "header";
-                }
-            }
-            if (mode === "header") {
-                file = await (0, $f9b86a07e378842e$export$2e2bcd8739ae039)(block);
-                mode = "file";
-                fileBlocks = [];
-                fileBlocksCount = Math.ceil(file.size / 512);
-                fileIdx = 0;
-            }
+        let blockIdx = 0;
+        while(blockIdx < noOfBlocks){
+            const block = input.slice(blockIdx * 512, (blockIdx + 1) * 512);
+            if (await $2bdd3d1603727488$var$isEmptyBlock(block)) break;
+            const file = await (0, $f9b86a07e378842e$export$2e2bcd8739ae039)(block);
+            const fileBlocksCount = Math.ceil(file.size / 512);
+            file.contents = input.slice((blockIdx + 1) * 512, (blockIdx + 1 + fileBlocksCount) * 512).slice(0, file.size);
+            files.push(Object.freeze(file));
+            blockIdx += fileBlocksCount + 1;
         }
     }
     return files;
-}
-function $2bdd3d1603727488$var$getBlocks(input, size = 512) {
-    const noOfBlocks = Math.floor(input.size / size);
-    const ret = [];
-    for(let i = 0; i < noOfBlocks; i++)ret.push(input.slice(i * size, (i + 1) * size));
-    return ret;
 }
 async function $2bdd3d1603727488$var$isEmptyBlock(block) {
     const buf = new Uint8Array(await block.arrayBuffer());
