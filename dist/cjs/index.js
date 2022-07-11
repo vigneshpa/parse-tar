@@ -31,6 +31,7 @@ class $f9b86a07e378842e$export$54ab42ec615919cc {
     mtime = new Date(0);
     type = 0;
     linkname = "";
+    contents = new Blob();
     uname = "";
     gname = "";
     deviceMajor = 0;
