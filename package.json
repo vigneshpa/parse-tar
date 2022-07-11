@@ -7,9 +7,8 @@
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "watch": "rm -rf dist && parcel watch",
     "build": "rm -rf dist && parcel build",
-    "example": "parcel example/index.html"
+    "test": "parcel test/index.html"
   },
   "repository": {
     "type": "git",
