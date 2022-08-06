@@ -1,6 +1,6 @@
 {
   "name": "@vigneshpa/parse-tar",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "parse tar files in pure javascript",
   "source": "src/parseTar.ts",
   "main": "dist/cjs/index.js",

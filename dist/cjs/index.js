@@ -84,41 +84,41 @@ class $2bdd3d1603727488$export$54ab42ec615919cc {
 let $2bdd3d1603727488$var$ustarWarned = false;
 function $2bdd3d1603727488$var$parseTarHeader(header) {
     const file = new $2bdd3d1603727488$export$54ab42ec615919cc();
-    file.name = $2bdd3d1603727488$var$readString(header, 0, 100);
-    file.mode = $2bdd3d1603727488$var$readOctal(header, 100, 8);
-    file.uid = $2bdd3d1603727488$var$readOctal(header, 108, 8);
-    file.gid = $2bdd3d1603727488$var$readOctal(header, 116, 8);
-    file.size = $2bdd3d1603727488$var$readOctal(header, 124, 12);
-    file.mtime = new Date($2bdd3d1603727488$var$readOctal(header, 136, 12) * 1000);
-    const checksum = $2bdd3d1603727488$var$readString(header, 148, 8);
-    const ftype = $2bdd3d1603727488$var$readString(header, 156, 1);
+    file.name = readString(0, 100);
+    file.mode = readOctal(100, 8);
+    file.uid = readOctal(108, 8);
+    file.gid = readOctal(116, 8);
+    file.size = readOctal(124, 12);
+    file.mtime = new Date(readOctal(136, 12) * 1000);
+    const checksum = readString(148, 8);
+    const ftype = readString(156, 1);
     if (ftype) {
         if (ftype.charCodeAt(0) >= 48 && ftype.charCodeAt(0) <= 57) file.type = ftype.charCodeAt(0);
         else file.type = "vendor";
     } else file.type = 0;
-    file.linkname = $2bdd3d1603727488$var$readString(header, 157, 100);
-    const ustarIndicator = $2bdd3d1603727488$var$readString(header, 257, 6);
+    file.linkname = readString(157, 100);
+    const ustarIndicator = readString(257, 6);
     if (ustarIndicator === "ustar") {
-        file.uname = $2bdd3d1603727488$var$readString(header, 265, 32);
-        file.gname = $2bdd3d1603727488$var$readString(header, 297, 32);
-        file.deviceMajor = $2bdd3d1603727488$var$readOctal(header, 329, 8);
-        file.deviceMinor = $2bdd3d1603727488$var$readOctal(header, 337, 8);
-        file.fileNamePrefix = $2bdd3d1603727488$var$readString(header, 345, 155);
+        file.uname = readString(265, 32);
+        file.gname = readString(297, 32);
+        file.deviceMajor = readOctal(329, 8);
+        file.deviceMinor = readOctal(337, 8);
+        file.fileNamePrefix = readString(345, 155);
     } else if (!$2bdd3d1603727488$var$ustarWarned) {
         console.warn("No Ustar indicator detected in tar file");
         $2bdd3d1603727488$var$ustarWarned = true;
     }
     return file;
-}
-function $2bdd3d1603727488$var$readString(input, start = 0, size) {
-    const decoder = new TextDecoder("ascii");
-    let buf = new Uint8Array(input.slice(start, size ? start + size : undefined));
-    const nullIdx = buf.indexOf(0);
-    buf = buf.slice(0, nullIdx);
-    return decoder.decode(buf);
-}
-function $2bdd3d1603727488$var$readOctal(input, start = 0, end) {
-    return parseInt($2bdd3d1603727488$var$readString(input, start, end), 8);
+    function readString(start = 0, size) {
+        const decoder = new TextDecoder("ascii");
+        let buf = new Uint8Array(header.slice(start, size ? start + size : undefined));
+        const nullIdx = buf.indexOf(0);
+        buf = buf.slice(0, nullIdx);
+        return decoder.decode(buf);
+    }
+    function readOctal(start = 0, end) {
+        return parseInt(readString(start, end), 8);
+    }
 }
 
 
