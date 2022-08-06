@@ -1,5 +1,5 @@
-import parseTarHeader, { TarFile } from './parseTarHeader';
-export { TarFile, TarFileType } from './parseTarHeader';
+import parseTarHeader, { TarFile } from './parseTarHeader.ts';
+export { TarFile, TarFileType } from './parseTarHeader.ts';
 export default async function parseTar(tarfile: File | Blob | ArrayBuffer | ArrayBufferLike) {
   const input = new Blob([tarfile]);
   const noOfBlocks = input.size / 512;
