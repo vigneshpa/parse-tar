@@ -26,6 +26,7 @@ export class TarFile {
   deviceMinor: number = 0;
   fileNamePrefix: string = '';
 }
+let ustarWarned = false;
 export default async function parseTarHeader(headerBlock: Blob) {
   const header = await headerBlock.arrayBuffer();
 
@@ -51,7 +52,10 @@ export default async function parseTarHeader(headerBlock: Blob) {
     file.deviceMajor = readOctal(header, 329, 8);
     file.deviceMinor = readOctal(header, 337, 8);
     file.fileNamePrefix = readString(header, 345, 155);
-  } else console.warn('No Ustar indicator detected in tar file');
+  } else if(!ustarWarned){
+    console.warn('No Ustar indicator detected in tar file');
+    ustarWarned = true;
+  }
   return file;
 }
 function readString(input: ArrayBufferLike, start: number = 0, size?: number) {
