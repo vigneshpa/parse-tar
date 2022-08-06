@@ -1,29 +1,63 @@
-export default async function parseTar(
-  tarfile: File | Blob | ArrayBuffer | ArrayBufferLike
+export default function parseTar(
+  tarfile: Blob
+): Promise<Readonly<TarFile<Blob>>[]>;
+export default function parseTar(
+  tarfile: ArrayBuffer | ArrayBufferLike
+): Readonly<TarFile<Uint8Array>>[];
+export default function parseTar(
+  tarfile: Blob | ArrayBuffer | ArrayBufferLike
 ) {
-  const input = new Blob([tarfile]);
-  const noOfBlocks = input.size / 512;
-  const files: Readonly<TarFile>[] = [];
-  {
-    let blockIdx = 0;
-    while (blockIdx < noOfBlocks) {
-      const block = input.slice(blockIdx * 512, (blockIdx + 1) * 512);
-      if (await isEmptyBlock(block)) break;
-      const file = await parseTarHeader(block);
-      const fileBlocksCount = Math.ceil(file.size / 512);
-      file.contents = input
-        .slice((blockIdx + 1) * 512, (blockIdx + 1 + fileBlocksCount) * 512)
-        .slice(0, file.size);
-      files.push(Object.freeze(file!));
-      blockIdx += fileBlocksCount + 1;
+  if (tarfile instanceof Blob) {
+    return (async () => {
+      const input = new Blob([tarfile]);
+      const noOfBlocks = input.size / 512;
+      const files: Readonly<TarFile<Blob>>[] = [];
+      {
+        let blockIdx = 0;
+        while (blockIdx < noOfBlocks) {
+          const block = input.slice(blockIdx * 512, (blockIdx + 1) * 512);
+          if (await isEmptyBlock(block)) break;
+          const file = parseTarHeader<Blob>(await block.arrayBuffer());
+          const fileBlocksCount = Math.ceil(file.size / 512);
+          file.contents = input
+            .slice((blockIdx + 1) * 512, (blockIdx + 1 + fileBlocksCount) * 512)
+            .slice(0, file.size);
+          files.push(Object.freeze(file!));
+          blockIdx += fileBlocksCount + 1;
+        }
+      }
+      return files;
+    })();
+  } else {
+    const input = new Uint8Array(tarfile);
+    const noOfBlocks = input.byteLength / 512;
+    const files: Readonly<TarFile<Uint8Array>>[] = [];
+    {
+      let blockIdx = 0;
+      while (blockIdx < noOfBlocks) {
+        const block = input.slice(blockIdx * 512, (blockIdx + 1) * 512);
+        if (isEmptyBlock(block)) break;
+        const file = parseTarHeader<Uint8Array>(block);
+        const fileBlocksCount = Math.ceil(file.size / 512);
+        file.contents = input
+          .slice((blockIdx + 1) * 512, (blockIdx + 1 + fileBlocksCount) * 512)
+          .slice(0, file.size);
+        files.push(Object.freeze(file!));
+        blockIdx += fileBlocksCount + 1;
+      }
+      return files;
     }
   }
-  return files;
 }
-
-async function isEmptyBlock(block: Blob) {
-  const buf = new Uint8Array(await block.arrayBuffer());
-  return buf.every((val) => val === 0);
+function isEmptyBlock(block: Blob): Promise<boolean>;
+function isEmptyBlock(block: Uint8Array): boolean;
+function isEmptyBlock(block: Blob | Uint8Array) {
+  if (block instanceof Blob)
+    return block
+      .arrayBuffer()
+      .then((val) => new Uint8Array(val))
+      .then((buf) => buf.every((val) => val === 0));
+  return block.every((val) => val === 0);
 }
 // https://en.wikipedia.org/wiki/Tar_(computing)#Header
 export const enum TarFileType {
@@ -37,7 +71,7 @@ export const enum TarFileType {
   ContiguousFile = 7,
   Vendor = "vendor",
 }
-export class TarFile {
+export class TarFile<T extends Blob | Uint8Array> {
   name: string = "";
   mode: number = 0;
   uid: number = 0;
@@ -46,7 +80,7 @@ export class TarFile {
   mtime: Date = new Date(0);
   type: TarFileType = TarFileType.NormalFile;
   linkname: string = "";
-  contents: Blob = new Blob();
+  contents?: T;
   uname: string = "";
   gname: string = "";
   deviceMajor: number = 0;
@@ -54,10 +88,8 @@ export class TarFile {
   fileNamePrefix: string = "";
 }
 let ustarWarned = false;
-async function parseTarHeader(headerBlock: Blob) {
-  const header = await headerBlock.arrayBuffer();
-
-  const file = new TarFile();
+function parseTarHeader<T extends Blob | Uint8Array>(header: ArrayBuffer) {
+  const file = new TarFile<T>();
   file.name = readString(header, 0, 100);
   file.mode = readOctal(header, 100, 8);
   file.uid = readOctal(header, 108, 8);
